@@ -1,7 +1,9 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
-import ChatBox from "../components/ChatBox";
+import NavBar from "../components/NavBar";
+import ChatContainer from "../components/ChatContainer";
+import ChatToggleButton from "../components/ChatToggleButton";
 
 const socket = io("http://localhost:5000");
 
@@ -11,7 +13,7 @@ function Room() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [username] = useState(() => localStorage.getItem("username") || `User-${Math.floor(Math.random() * 1000)}`);
-  const [showNotification, setShowNotification] = useState(true);
+  const [showChat, setShowChat] = useState(false);
 
   useEffect(() => {
     localStorage.setItem("username", username);
@@ -45,6 +47,12 @@ function Room() {
     setMessage("");
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      sendMessage();
+    }
+  };
+
   const exitRoom = () => {
     localStorage.removeItem(`chat_${roomId}`);
     navigate("/");
@@ -55,29 +63,28 @@ function Room() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-800 text-white p-4">
-      {showNotification && (
-        <div className="fixed top-5 right-5 bg-blue-500 text-white p-4 rounded-lg shadow-lg flex items-center gap-2">
-          <span className="font-bold">Room Code: {roomId}</span>
-          <button 
-            onClick={copyToClipboard} 
-            className="bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded-lg text-sm">
-            Copy
-          </button>
-          <button
-            onClick={() => setShowNotification(false)}
-            className="text-white font-bold text-lg ml-2">
-            ×
-          </button>
-        </div>
-      )}
-      <ChatBox messages={messages} username={username} message={message} setMessage={setMessage} sendMessage={sendMessage} />
-      <button
-        onClick={exitRoom}
-        className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg mt-4"
-      >
-        Exit Room
-      </button>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-800 text-white p-4 relative">
+      {/* Navbar with overlapping effect */}
+      <NavBar exitRoom={exitRoom} roomId={roomId} copyToClipboard={copyToClipboard} className="absolute top-0 w-full z-50" />
+
+      <div className="flex w-full justify-center mt-16">
+        {/* Main Content (Playlist or other components can go here) */}
+        <div className="flex-1 h-screen flex flex-col">{/* <Playlist /> */}</div>
+
+        {/* Chat Section */}
+        <ChatToggleButton showChat={showChat} setShowChat={setShowChat} />
+        {showChat && (
+          <ChatContainer
+            messages={messages}
+            username={username}
+            message={message}
+            setMessage={setMessage}
+            sendMessage={sendMessage}
+            handleKeyPress={handleKeyPress}
+            setShowChat={setShowChat}
+          />
+        )}
+      </div>
     </div>
   );
 }
